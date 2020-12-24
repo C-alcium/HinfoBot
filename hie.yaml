@@ -1,0 +1,7 @@
+cradle:
+  stack:
+    - path: "./lib"
+      component: "HinfoBot:lib"
+
+    - path: "./src"
+      component: "HinfoBot:exe:HinfoBot"
