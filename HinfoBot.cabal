@@ -56,4 +56,5 @@ executable HinfoBot
                      , http-client
                      , http-client-tls
                      , HUnit 
+                     , discord-haskell
 
