@@ -1,7 +1,10 @@
 cradle:
-  stack:
-    - path: "./lib"
-      component: "HinfoBot:lib"
+  cabal:
+    - path: "./lib/test"
+      component: "HinfoBot:test:NewsAPITests"
 
-    - path: "./src"
+    - path: "lib"
+      component: "lib:HinfoBot"
+
+    - path: "src"
       component: "HinfoBot:exe:HinfoBot"

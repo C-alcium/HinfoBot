@@ -32,16 +32,17 @@ data NewsResult = NewsResult { status       :: String,
                                totalResults :: Int,
                                articles     :: [ArticleResult] } deriving (Show, Eq, Generic)
 
-data ArticleResult = ArticleResult { source      :: Source,
-                                     author      :: String,
-                                     title       :: String,
-                                     description :: String,
-                                     url         :: String,
-                                     urlToImage  :: String,
-                                     publishedAt :: String,
-                                     content     :: String } deriving (Show, Eq, Generic)
+-- All of the data must be typed with Maybe, this API loves to leave things out...
+data ArticleResult = ArticleResult { source      :: Maybe Source,
+                                     author      :: Maybe String,
+                                     title       :: Maybe String,
+                                     description :: Maybe String,
+                                     url         :: Maybe String,
+                                     urlToImage  :: Maybe String,
+                                     publishedAt :: Maybe String,
+                                     content     :: Maybe String } deriving (Show, Eq, Generic)
 
-data Source = Source { id   :: String,
+data Source = Source { id   :: Maybe String,
                        name :: String } deriving (Show, Eq, Generic)
 
 data EverythingQueryParameters = EverythingQueryParameters

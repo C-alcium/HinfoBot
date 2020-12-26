@@ -2,6 +2,7 @@ module Main where
 
 import           NewsAPI
 import           System.Environment
+import Data.Either
 
 main :: IO ()
 main = do
@@ -10,5 +11,7 @@ main = do
   let mSearch = Just "bitcoin"
   let eParams = defaultEverythingParams { apiKey = mApiKey, q = mSearch}
   res <- runEverything eParams
+  let s = isRight res 
   print res
+  print s 
 
