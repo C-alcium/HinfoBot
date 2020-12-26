@@ -22,5 +22,6 @@ queryWithAPIKeyShouldSucceed :: Test
 queryWithAPIKeyShouldSucceed = TestCase(do
   envApiKey <- getEnv "NEWS_API_KEY"
   let mAPIKey = Just envApiKey
-  queryRes <- isRight <$> runEverything defaultEverythingParams { apiKey = mAPIKey }
+  let testQuery = Just "business"
+  queryRes <- isRight <$> runEverything defaultEverythingParams { apiKey = mAPIKey, q = testQuery}
   assertBool "Produced a Left result, despite having a valid APIKey" queryRes)
