@@ -58,4 +58,5 @@ executable HinfoBot
                      , HUnit 
                      , discord-haskell
                      , text
+                     , megaparsec
 
