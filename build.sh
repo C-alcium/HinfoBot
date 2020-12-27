@@ -1,1 +1,2 @@
-stack build --fast --file-watch --test
+stack build --fast --file-watch --test 
+
