@@ -1,15 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+
 module Main where
 
-import           Control.Monad        (when)
+import           Control.Monad              (when)
+import           Control.Monad.Trans.Reader
 import           Data.Either
-import qualified Data.List.Split      as S
-import           Data.Text            as T
-import           Data.Text.IO         as TIO
+import qualified Data.List.Split            as S
+import           Data.Text                  as T
+import           Data.Text.IO               as TIO
 import           Data.Void
+import Data.Typeable
 import           Discord
-import qualified Discord.Requests     as DR
+import qualified Discord.Requests           as DR
 import           Discord.Types
 import           NewsAPI
 import           System.Environment
@@ -42,10 +45,36 @@ messageHandler event = case event of
 performCommandAction (Left _)                 _ = pure ()
 performCommandAction (Right (vCommand, args)) m =
   case vCommand of
-    Help -> pure ()
-    Ping -> do
-      _ <- restCall (DR.CreateMessage (messageChannel m) "Pong")
-      pure ()
+    Help -> executeHelpCommand m
+    Ping -> executePingCommand m
+
+
+--------------- Command Execution ---------------
+
+executePingCommand :: Message -> ReaderT DiscordHandle IO ()
+executePingCommand m = do
+  _ <- restCall (DR.CreateMessage (messageChannel m) "Pong")
+  pure ()
+
+
+executeHelpCommand :: Message -> ReaderT DiscordHandle IO ()
+executeHelpCommand m = do
+  _ <- restCall (DR.CreateMessageEmbed (messageChannel m) "" $
+    def { createEmbedTitle       = "Help Menu :: HinfoBot"
+        , createEmbedDescription = "The basic functionality of each command is described below" 
+        , createEmbedFields      = commandDescriptions
+        })
+  pure ()
+
+
+describeCommand :: ValidCommand -> EmbedField
+describeCommand c =
+  case c of
+    Help -> EmbedField "Help" "Display the help menu" Nothing
+    Ping -> EmbedField "Ping" "Pong!" Nothing
+
+commandDescriptions :: [EmbedField]
+commandDescriptions = Prelude.map describeCommand commandList 
 
 --------------- Command Predicates ---------------
 
@@ -63,7 +92,10 @@ isCommandMessage m = commandPrefix `isPrefixOf` messageText m
 type Parser = Parsec Void String
 
 data ValidCommand = Help
-                  | Ping deriving (Eq, Show)
+                  | Ping deriving (Eq, Show, Ord, Enum, Bounded)
+
+commandList :: [ValidCommand]
+commandList = enumFrom minBound :: [ValidCommand]
 
 pCommand :: Parser (ValidCommand, [String])
 pCommand = do

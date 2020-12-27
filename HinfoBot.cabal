@@ -59,4 +59,5 @@ executable HinfoBot
                      , discord-haskell
                      , text
                      , megaparsec
+                     , transformers
 
