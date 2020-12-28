@@ -1,4 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 
 module Main where
@@ -126,15 +129,26 @@ data ValidCommand = Help
                   | Ping 
                   | Search deriving (Eq, Show, Ord, Enum, Bounded)
 
+class ExecutableCommand x where
+  describe :: x -> String
+
+instance ExecutableCommand ValidCommand where
+  describe Help   = "Displays this help menu"
+  describe Ping   = "Pong!"
+  describe Search = "Search the news API for a given search term"
+
 commandList :: [ValidCommand]
 commandList = enumFrom minBound :: [ValidCommand]
+
+validCommandP :: Parser ValidCommand
+validCommandP = choice $ Prelude.map build' commandList 
+  where
+    build' a = a <$ string' (show a)
 
 pCommand :: Parser (ValidCommand, [String])
 pCommand = do
   _             <- char '&'
-  parsedCommand <- choice [ Help <$ string' "help"
-                          , Ping <$ string' "ping"
-                          , Search <$ string' "search" ]
+  parsedCommand <- validCommandP
   arguments     <- manyTill anySingle eof
   pure (parsedCommand, S.splitOn " " arguments)
 
