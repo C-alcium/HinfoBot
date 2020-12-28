@@ -1,11 +1,9 @@
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies        #-}
-
+{-# LANGUAGE OverloadedStrings #-}
 
 module Main where
 
+import qualified CommandParsing             as CMDParse
+import qualified Commands                   as CMD
 import           Control.Monad              (when)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Reader
@@ -15,14 +13,14 @@ import           Data.Maybe                 (fromJust, isJust)
 import           Data.Text                  as T
 import           Data.Text.IO               as TIO
 import           Data.Typeable
-import           Data.Void
 import           Discord
 import qualified Discord.Requests           as DR
 import           Discord.Types
 import           NewsAPI
-import           System.Environment
+import           System.Environment         (getEnv)
 import           Text.Megaparsec
-import           Text.Megaparsec.Char
+
+type DiscordEffect = ReaderT DiscordHandle IO ()
 
 main :: IO ()
 main = do
@@ -35,13 +33,12 @@ main = do
 
 --------------- Event Handling Code ---------------
 
+messageHandler :: Event -> DiscordEffect
 messageHandler event = case event of
-  MessageCreate m -> when (not (fromBot m) && isCommandMessage m) $ do
-      let commandParseResult = applyCommandParse (messageText m)
+  MessageCreate m -> when (not (CMDParse.fromBot m) && CMDParse.isCommandMessage m) $ do
+      let commandParseResult = CMDParse.parseCommand (messageText m)
       performCommandAction commandParseResult m
   _ -> pure ()
-  where
-    applyCommandParse m = runParser pCommand "" (T.unpack m)
 
 --------------- Command Execution ---------------
 
@@ -50,20 +47,20 @@ messageHandler event = case event of
 performCommandAction (Left _)                 _ = pure ()
 performCommandAction (Right (vCommand, args)) m =
   case vCommand of
-    Help   -> executeHelpCommand m
-    Ping   -> executePingCommand m
-    Search -> executeSearchCommand m args
+    CMD.Help   -> executeHelpCommand m
+    CMD.Ping   -> executePingCommand m
+    CMD.Search -> executeSearchCommand m args
 
 -- Ping
 
-executePingCommand :: Message -> ReaderT DiscordHandle IO ()
+executePingCommand :: Message -> DiscordEffect
 executePingCommand m = do
   _ <- restCall (DR.CreateMessage (messageChannel m) "Pong")
   pure ()
 
 -- Help
 
-executeHelpCommand :: Message -> ReaderT DiscordHandle IO ()
+executeHelpCommand :: Message -> DiscordEffect
 executeHelpCommand m = do
   _ <- restCall (DR.CreateMessageEmbed (messageChannel m) "" $
     def { createEmbedTitle       = "Help Menu :: HinfoBot"
@@ -73,13 +70,13 @@ executeHelpCommand m = do
   pure ()
 
 commandDescriptions :: [EmbedField]
-commandDescriptions = Prelude.map describeCommand commandList
+commandDescriptions = Prelude.map describeCommand CMD.commandList
   where
-    describeCommand c = EmbedField (tShow c) (describe c) Nothing
+    describeCommand c = EmbedField (tShow c) (CMD.describe c) Nothing
 
 -- Search
 
-executeSearchCommand :: Message -> [String] -> ReaderT DiscordHandle IO ()
+executeSearchCommand :: Message -> [String] -> DiscordEffect
 executeSearchCommand m args = do
   let glued = Prelude.unwords args
   let target = messageChannel m
@@ -92,15 +89,12 @@ executeSearchCommand m args = do
 
   pure ()
 
-
 buildSearchEmbed :: NewsResult -> Text -> CreateEmbed
 buildSearchEmbed result query =
   def { createEmbedTitle       = "Results for" <> query
       , createEmbedDescription = "found" <> tShow (totalResults result) <> " result(s)"
       , createEmbedFields      = produceResultFields (articles result)
       }
-
-
 
 produceResultFields :: [ArticleResult] -> [EmbedField]
 produceResultFields articles = Prelude.map produceField (validArticles articles)
@@ -111,11 +105,12 @@ produceResultFields articles = Prelude.map produceField (validArticles articles)
 
 -- Search the API
 
+
 search' query = do
  newsapikey <- getEnv "NEWS_API_KEY"
  runEverything defaultEverythingParams { apiKey = Just newsapikey, q = Just query }
 
---------------- Discord Utilities ---------------
+--------------- Utilities ---------------
 
 sendMessageOrError :: ChannelId -> Text -> ReaderT DiscordHandle IO ()
 sendMessageOrError target message = do
@@ -125,50 +120,6 @@ sendMessageOrError target message = do
       _ <- liftIO $ print e
       pure ()
     (Right v) -> pure ()
-
---------------- Command Predicates ---------------
-
-commandPrefix :: Text
-commandPrefix = "&"
-
-fromBot :: Message -> Bool
-fromBot m = userIsBot (messageAuthor m)
-
-isCommandMessage :: Message -> Bool
-isCommandMessage m = commandPrefix `isPrefixOf` messageText m
-
---------------- Parse Command ---------------
-
-type Parser = Parsec Void String
-
-data ValidCommand = Help
-                  | Ping
-                  | Search deriving (Eq, Show, Ord, Enum, Bounded)
-
-class ExecutableCommand x where
-  describe :: x -> Text
-
-instance ExecutableCommand ValidCommand where
-  describe Help   = "Displays this help menu"
-  describe Ping   = "Pong!"
-  describe Search = "Search the news API for a given search term"
-
-commandList :: [ValidCommand]
-commandList = enumFrom minBound :: [ValidCommand]
-
-validCommandP :: Parser ValidCommand
-validCommandP = choice $ Prelude.map build' commandList
-  where
-    build' a = a <$ string' (show a)
-
-pCommand :: Parser (ValidCommand, [String])
-pCommand = do
-  _             <- char '&'
-  parsedCommand <- validCommandP
-  arguments     <- manyTill anySingle eof
-  pure (parsedCommand, S.splitOn " " arguments)
-
---------------- Utility ---------------
 
 tShow :: (Show a) => a -> Text
 tShow = T.pack . show
