@@ -69,16 +69,10 @@ executeHelpCommand m = do
         })
   pure ()
 
-
-describeCommand :: ValidCommand -> EmbedField
-describeCommand c =
-  case c of
-    Help -> EmbedField "Help" "Display the help menu" Nothing
-    Ping -> EmbedField "Ping" "Pong!" Nothing
-    Search -> EmbedField "Search" "Display a search result from the Newsapi.org" Nothing
-
 commandDescriptions :: [EmbedField]
-commandDescriptions = Prelude.map describeCommand commandList 
+commandDescriptions = Prelude.map describeCommand commandList
+  where 
+    describeCommand c = EmbedField (T.pack  (show c)) (describe c) Nothing
 
 -- Search 
 
@@ -130,7 +124,7 @@ data ValidCommand = Help
                   | Search deriving (Eq, Show, Ord, Enum, Bounded)
 
 class ExecutableCommand x where
-  describe :: x -> String
+  describe :: x -> Text 
 
 instance ExecutableCommand ValidCommand where
   describe Help   = "Displays this help menu"
