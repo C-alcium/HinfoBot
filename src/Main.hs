@@ -9,9 +9,9 @@ module Main where
 import           Control.Monad              (when)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Reader
-import Data.Maybe (isJust, fromJust)
 import           Data.Either
 import qualified Data.List.Split            as S
+import           Data.Maybe                 (fromJust, isJust)
 import           Data.Text                  as T
 import           Data.Text.IO               as TIO
 import           Data.Typeable
@@ -45,7 +45,7 @@ messageHandler event = case event of
 
 --------------- Command Execution ---------------
 
--- Hook for determining which command to execute 
+-- Hook for determining which command to execute
 
 performCommandAction (Left _)                 _ = pure ()
 performCommandAction (Right (vCommand, args)) m =
@@ -94,9 +94,9 @@ executeSearchCommand m args = do
 
 
 buildSearchEmbed :: NewsResult -> Text -> CreateEmbed
-buildSearchEmbed result query = 
+buildSearchEmbed result query =
   def { createEmbedTitle       = "Results for" <> query
-      , createEmbedDescription = "found" <> tShow (totalResults result) <> " result(s)" 
+      , createEmbedDescription = "found" <> tShow (totalResults result) <> " result(s)"
       , createEmbedFields      = produceResultFields (articles result)
       }
 
@@ -171,5 +171,5 @@ pCommand = do
 --------------- Utility ---------------
 
 tShow :: (Show a) => a -> Text
-tShow = T.pack . show 
+tShow = T.pack . show
 
