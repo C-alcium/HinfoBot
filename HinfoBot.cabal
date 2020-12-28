@@ -8,7 +8,7 @@ license-file:        LICENSE
 author:              C-alcium 
 maintainer:          62979683+C-alcium@users.noreply.github.com
 copyright:           2020 C-alcium 
-category:            Web
+category:            Network 
 build-type:          Simple
 cabal-version:       >=1.10
 extra-source-files:  README.md
