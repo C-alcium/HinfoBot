@@ -5,6 +5,7 @@ module Main where
 
 import           Control.Monad              (when)
 import           Control.Monad.Trans.Reader
+import Control.Monad.IO.Class
 import           Data.Either
 import qualified Data.List.Split            as S
 import           Data.Text                  as T
@@ -21,9 +22,7 @@ import           Text.Megaparsec.Char
 
 main :: IO ()
 main = do
-  newsapikey <- getEnv "NEWS_API_KEY"
   discordApiToken <- getEnv "DISCORD_API_TOKEN"
-  let mApiKey = Just newsapikey
   userFacingError <- runDiscord $ def
     { discordToken = T.pack discordApiToken
     , discordOnEvent = messageHandler
@@ -40,22 +39,23 @@ messageHandler event = case event of
   where
     applyCommandParse m = runParser pCommand "" (T.unpack m)
 
---------------- Command Code ---------------
+--------------- Command Execution ---------------
 
 performCommandAction (Left _)                 _ = pure ()
 performCommandAction (Right (vCommand, args)) m =
   case vCommand of
     Help -> executeHelpCommand m
     Ping -> executePingCommand m
+    Search -> executeSearchCommand m args 
 
-
---------------- Command Execution ---------------
+-- Ping
 
 executePingCommand :: Message -> ReaderT DiscordHandle IO ()
 executePingCommand m = do
   _ <- restCall (DR.CreateMessage (messageChannel m) "Pong")
   pure ()
 
+-- Help
 
 executeHelpCommand :: Message -> ReaderT DiscordHandle IO ()
 executeHelpCommand m = do
@@ -72,9 +72,40 @@ describeCommand c =
   case c of
     Help -> EmbedField "Help" "Display the help menu" Nothing
     Ping -> EmbedField "Ping" "Pong!" Nothing
+    Search -> EmbedField "Search" "Display a search result from the Newsapi.org" Nothing
 
 commandDescriptions :: [EmbedField]
 commandDescriptions = Prelude.map describeCommand commandList 
+
+-- Search 
+
+executeSearchCommand :: Message -> [String] -> ReaderT DiscordHandle IO ()
+executeSearchCommand m args = do
+  let glued = Prelude.unwords args
+  let target = messageChannel m
+  searchRes <- liftIO (search' glued)
+  _         <- case searchRes of
+                 Left  e -> sendMessageOrError target (T.pack ("API Call failed: " <> show e))
+                 Right a -> sendMessageOrError target ((T.pack .show . totalResults) a)
+  pure ()
+
+-- Search the API 
+
+search' query = do
+ newsapikey <- getEnv "NEWS_API_KEY"
+ runEverything defaultEverythingParams { apiKey = Just newsapikey, q = Just query }
+
+--------------- Discord Utilities ---------------
+
+sendMessageOrError :: ChannelId -> Text -> ReaderT DiscordHandle IO ()
+sendMessageOrError target message = do
+  result <- restCall (DR.CreateMessage target message)
+  case result of
+    (Left e)  -> do
+      _ <- liftIO $ print e
+      pure ()
+    (Right v) -> pure ()
+
 
 --------------- Command Predicates ---------------
 
@@ -91,8 +122,9 @@ isCommandMessage m = commandPrefix `isPrefixOf` messageText m
 
 type Parser = Parsec Void String
 
-data ValidCommand = Help
-                  | Ping deriving (Eq, Show, Ord, Enum, Bounded)
+data ValidCommand = Help 
+                  | Ping 
+                  | Search deriving (Eq, Show, Ord, Enum, Bounded)
 
 commandList :: [ValidCommand]
 commandList = enumFrom minBound :: [ValidCommand]
@@ -101,7 +133,8 @@ pCommand :: Parser (ValidCommand, [String])
 pCommand = do
   _             <- char '&'
   parsedCommand <- choice [ Help <$ string' "help"
-                          , Ping <$ string' "ping" ]
+                          , Ping <$ string' "ping"
+                          , Search <$ string' "search" ]
   arguments     <- manyTill anySingle eof
   pure (parsedCommand, S.splitOn " " arguments)
 

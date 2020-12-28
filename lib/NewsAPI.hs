@@ -7,6 +7,10 @@
 module NewsAPI
   ( runEverything
   , EverythingQueryParameters (..)
+  , NewsResult (..) 
+  , ArticleResult (..)
+  , Source (..)
+  , SortType (..)
   , defaultEverythingParams 
   ) where
 
