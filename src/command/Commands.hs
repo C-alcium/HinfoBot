@@ -18,4 +18,5 @@ instance ExecutableCommand ValidCommand where
   describe Search = "Search the news API for a given search term"
 
 commandList :: [ValidCommand]
-commandList = [minBound..] 
+commandList = [minBound..]
+

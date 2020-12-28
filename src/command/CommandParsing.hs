@@ -7,11 +7,11 @@ module CommandParsing where
 import           Data.Text
 import           Discord.Types
 
+import qualified Commands             as CMD
 import           Data.List.Split      as S
 import           Data.Void
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
-import qualified Commands as CMD
 
 type Parser = Parsec Void String
 
@@ -33,7 +33,7 @@ parseCommand :: Text -> Either (ParseErrorBundle String Void) (CMD.ValidCommand,
 parseCommand m = runParser pCommand "" (unpack m)
 
 validCommandP :: Parser CMD.ValidCommand
-validCommandP = choice $ Prelude.map build' CMD.commandList 
+validCommandP = choice $ Prelude.map build' CMD.commandList
   where
     build' a = a <$ string' (show a)
 

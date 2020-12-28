@@ -21,8 +21,6 @@ test-suite NewsAPITests
                  , HUnit
                  , HinfoBot
 
-
-
 library
   exposed-modules:
         NewsAPI
