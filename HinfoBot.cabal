@@ -26,6 +26,7 @@ library
         NewsAPI
       , Commands
       , CommandParsing
+      , CommandExecution
   hs-source-dirs:
         lib
       , src/command
