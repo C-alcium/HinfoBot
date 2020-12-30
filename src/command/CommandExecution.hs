@@ -1,7 +1,8 @@
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module CommandExecution 
-  ( messageHandler 
+module CommandExecution
+  ( messageHandler
   )
     where
 
@@ -14,11 +15,18 @@ import qualified Data.List.Split            as S
 import           Data.Maybe                 (fromJust, isJust)
 import           Data.Text                  as T
 import           Data.Text.IO               as TIO
+import           Data.Time.Calendar
+import           Data.Time.Clock
 import           Discord
 import qualified Discord.Requests           as DR
 import           Discord.Types
 import           NewsAPI
+import           Servant.Client
 import           System.Environment         (getEnv)
+import           System.Log.Logger
+
+loggerName :: String
+loggerName = "command.execution"
 
 type DiscordEffect = ReaderT DiscordHandle IO ()
 
@@ -35,12 +43,14 @@ messageHandler event = case event of
 
 -- Hook for determining which command to execute
 
+performCommandAction :: Either a (CMD.ValidCommand, [String]) -> Message -> DiscordEffect
 performCommandAction (Left _)                 _ = pure ()
-performCommandAction (Right (vCommand, args)) m =
+performCommandAction (Right (vCommand, args)) m = do
   case vCommand of
     CMD.Help   -> executeHelpCommand m
     CMD.Ping   -> executePingCommand m
     CMD.Search -> executeSearchCommand m args
+  logExecution vCommand
 
 -- Ping
 
@@ -71,7 +81,7 @@ executeSearchCommand :: Message -> [String] -> DiscordEffect
 executeSearchCommand m args = do
   let glued = Prelude.unwords args
   let target = messageChannel m
-  searchRes <- liftIO (search' glued)
+  searchRes <- liftIO (searchNewsAPI glued)
   _         <- case searchRes of
                  Left e -> sendMessageOrError target (T.pack ("API Call failed: " <> show e))
                  Right a -> do
@@ -93,11 +103,10 @@ produceResultFields articles = Prelude.map produceField (validArticles articles)
     validArticles as     = Prelude.filter (\ a -> isJust (title a) && isJust (url a)) as
     produceField article = EmbedField ((T.pack . fromJust) (title article)) ((T.pack . fromJust) (url article)) Nothing
 
-
 -- Search the API
 
-
-search' query = do
+searchNewsAPI :: String -> IO (Either ClientError NewsResult)
+searchNewsAPI query = do
  newsapikey <- getEnv "NEWS_API_KEY"
  runEverything defaultEverythingParams { apiKey = Just newsapikey, q = Just query }
 
@@ -114,4 +123,12 @@ sendMessageOrError target message = do
 
 tShow :: (Show a) => a -> Text
 tShow = T.pack . show
+
+logExecution :: (MonadIO m, Show a) => a -> m ()
+logExecution c = do
+  currentDate <- liftIO dateString
+  liftIO (warningM loggerName ( "[" <> currentDate <> "]" <> "Executing " <> show c <> " command"))
+    where
+      dateString = getCurrentTime >>= (pure . show)
+
 

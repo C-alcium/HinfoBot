@@ -45,6 +45,7 @@ library
                      , megaparsec
                      , transformers
                      , HUnit
+                     , hslogger
 
 executable HinfoBot
   hs-source-dirs:      
@@ -67,4 +68,5 @@ executable HinfoBot
                      , text
                      , megaparsec
                      , transformers
+                     , hslogger
 
