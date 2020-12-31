@@ -2,7 +2,7 @@
 
 module Main where
 
-import           CommandExecution
+import           Command.Execution
 import           Data.Text          as T
 import           Data.Text.IO       as TIO
 import           Discord

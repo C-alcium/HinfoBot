@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module Commands
+module Command.Definitions
   ( ValidCommand (..)
   , describe
   , commandList

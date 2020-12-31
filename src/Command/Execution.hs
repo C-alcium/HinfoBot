@@ -1,13 +1,14 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module CommandExecution
+module Command.Execution
   ( commandHandler
   )
     where
 
-import qualified CommandParsing             as CMDParse
-import qualified Commands                   as CMD
+import qualified Command.Definitions        as CMD
+import qualified Command.Parsing            as CMDParse
+import           Command.Types
 import           Control.Monad              (when)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Reader
@@ -24,7 +25,6 @@ import           NewsAPI
 import           Servant.Client
 import           System.Environment         (getEnv)
 import           System.Log.Logger
-import           Types
 
 loggerName :: String
 loggerName = "command.execution"

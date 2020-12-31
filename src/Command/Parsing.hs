@@ -2,17 +2,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies      #-}
 
-module CommandParsing where
+module Command.Parsing where
 
 import           Data.Text
 import           Discord.Types
 
-import qualified Commands             as CMD
+import qualified Command.Definitions  as CMD
+import           Command.Types
 import           Data.List.Split      as S
 import           Data.Void
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
-import           Types
 
 
 --------------- Command Predicates ---------------
