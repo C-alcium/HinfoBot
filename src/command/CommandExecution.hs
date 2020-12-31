@@ -35,21 +35,23 @@ messageHandler :: Event -> DiscordEffect
 messageHandler event = case event of
   MessageCreate m -> when (not (CMDParse.fromBot m) && CMDParse.isCommandMessage m) $ do
       let commandParseResult = CMDParse.parseCommand (messageText m)
-      performCommandAction commandParseResult m
+      let chan               = messageChannel m
+      case commandParseResult of
+        (Left _ )            -> sendMessageOrError chan "Command parsing failed."
+        (Right (cmd, args) ) -> performCommandAction cmd m args
   _ -> pure ()
 
 --------------- Command Execution ---------------
 
 -- Hook for determining which command to execute
 
-performCommandAction :: Either a (CMD.ValidCommand, String) -> Message -> DiscordEffect
-performCommandAction (Left _)                 _ = pure ()
-performCommandAction (Right (vCommand, args)) m = do
-  case vCommand of
+performCommandAction :: CMD.ValidCommand -> Message -> String -> DiscordEffect
+performCommandAction cmd m args = do
+  case cmd of
     CMD.Help   -> executeHelpCommand m
     CMD.Ping   -> executePingCommand m
     CMD.Search -> executeSearchCommand m args
-  logExecution vCommand
+  logExecution cmd
 
 -- Ping
 
