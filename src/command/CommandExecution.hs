@@ -24,7 +24,7 @@ import           NewsAPI
 import           Servant.Client
 import           System.Environment         (getEnv)
 import           System.Log.Logger
-import Types
+import           Types
 
 loggerName :: String
 loggerName = "command.execution"
@@ -87,7 +87,6 @@ executeSearchCommand m args = do
                  Right a -> do
                    _ <- restCall (DR.CreateMessageEmbed (messageChannel m) "" (buildSearchEmbed a (T.pack args)))
                    pure ()
-
   pure ()
 
 buildSearchEmbed :: NewsResult -> Text -> CreateEmbed
