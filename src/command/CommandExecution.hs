@@ -79,6 +79,7 @@ commandDescriptions = Prelude.map describeCommand CMD.commandList
 -- Search
 
 executeSearchCommand :: Message -> String -> DiscordEffect
+executeSearchCommand m []   = do sendMessageOrError (messageChannel m) "You must provide a search term"
 executeSearchCommand m args = do
   let target = messageChannel m
   searchRes <- liftIO (searchNewsAPI args)
