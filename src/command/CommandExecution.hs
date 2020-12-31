@@ -24,11 +24,10 @@ import           NewsAPI
 import           Servant.Client
 import           System.Environment         (getEnv)
 import           System.Log.Logger
+import Types
 
 loggerName :: String
 loggerName = "command.execution"
-
-type DiscordEffect = ReaderT DiscordHandle IO ()
 
 --------------- Event Handling Code ---------------
 
@@ -43,7 +42,7 @@ messageHandler event = case event of
 
 -- Hook for determining which command to execute
 
-performCommandAction :: Either a (CMD.ValidCommand, [String]) -> Message -> DiscordEffect
+performCommandAction :: Either a (CMD.ValidCommand, String) -> Message -> DiscordEffect
 performCommandAction (Left _)                 _ = pure ()
 performCommandAction (Right (vCommand, args)) m = do
   case vCommand of
@@ -77,15 +76,14 @@ commandDescriptions = Prelude.map describeCommand CMD.commandList
 
 -- Search
 
-executeSearchCommand :: Message -> [String] -> DiscordEffect
+executeSearchCommand :: Message -> String -> DiscordEffect
 executeSearchCommand m args = do
-  let glued = Prelude.unwords args
   let target = messageChannel m
-  searchRes <- liftIO (searchNewsAPI glued)
+  searchRes <- liftIO (searchNewsAPI args)
   _         <- case searchRes of
                  Left e -> sendMessageOrError target (T.pack ("API Call failed: " <> show e))
                  Right a -> do
-                   _ <- restCall (DR.CreateMessageEmbed (messageChannel m) "" (buildSearchEmbed a (T.pack glued)))
+                   _ <- restCall (DR.CreateMessageEmbed (messageChannel m) "" (buildSearchEmbed a (T.pack args)))
                    pure ()
 
   pure ()
@@ -130,5 +128,4 @@ logExecution c = do
   liftIO (warningM loggerName ( "[" <> currentDate <> "]" <> "Executing " <> show c <> " command"))
     where
       dateString = getCurrentTime >>= (pure . show)
-
 

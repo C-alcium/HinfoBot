@@ -27,6 +27,7 @@ library
       , Commands
       , CommandParsing
       , CommandExecution
+      , Types
   hs-source-dirs:
         lib
       , src/command
@@ -46,6 +47,7 @@ library
                      , transformers
                      , HUnit
                      , hslogger
+                     , containers
 
 executable HinfoBot
   hs-source-dirs:      
@@ -69,4 +71,5 @@ executable HinfoBot
                      , megaparsec
                      , transformers
                      , hslogger
+                     , containers
 

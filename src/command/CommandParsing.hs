@@ -12,8 +12,7 @@ import           Data.List.Split      as S
 import           Data.Void
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
-
-type Parser = Parsec Void String
+import           Types
 
 
 --------------- Command Predicates ---------------
@@ -29,7 +28,7 @@ isCommandMessage m = commandPrefix `isPrefixOf` messageText m
 
 --------------- Command Parsing ---------------
 
-parseCommand :: Text -> Either (ParseErrorBundle String Void) (CMD.ValidCommand, [String])
+parseCommand :: Text -> Either (ParseErrorBundle String Void) (CMD.ValidCommand, String)
 parseCommand m = runParser pCommand "" (unpack m)
 
 validCommandP :: Parser CMD.ValidCommand
@@ -37,11 +36,10 @@ validCommandP = choice $ Prelude.map build' CMD.commandList
   where
     build' a = a <$ string' (show a)
 
-pCommand :: Parser (CMD.ValidCommand, [String])
+pCommand :: Parser (CMD.ValidCommand, String)
 pCommand = do
   _             <- char '&'
   parsedCommand <- validCommandP
   arguments     <- manyTill anySingle eof
-  pure (parsedCommand, S.splitOn " " arguments)
-
+  pure (parsedCommand, arguments)
 

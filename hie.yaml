@@ -6,5 +6,8 @@ cradle:
     - path: "lib"
       component: "lib:HinfoBot"
 
+    - path: "src/command"
+      component: "lib:HinfoBot"
+
     - path: "src"
       component: "HinfoBot:exe:HinfoBot"
