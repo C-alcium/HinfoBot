@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module CommandExecution
-  ( messageHandler
+  ( commandHandler
   )
     where
 
@@ -31,8 +31,8 @@ loggerName = "command.execution"
 
 --------------- Event Handling Code ---------------
 
-messageHandler :: Event -> DiscordEffect
-messageHandler event = case event of
+commandHandler :: Event -> DiscordEffect
+commandHandler event = case event of
   MessageCreate m -> when (not (CMDParse.fromBot m) && CMDParse.isCommandMessage m) $ do
       let commandParseResult = CMDParse.parseCommand (messageText m)
       let chan               = messageChannel m

@@ -15,7 +15,7 @@ main = do
   discordApiToken <- getEnv "DISCORD_API_TOKEN"
   userFacingError <- runDiscord $ def
     { discordToken = T.pack discordApiToken
-    , discordOnEvent = messageHandler
+    , discordOnEvent = commandHandler
     }
   TIO.putStrLn userFacingError
 
