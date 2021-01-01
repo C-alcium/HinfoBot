@@ -48,6 +48,8 @@ library
                      , HUnit
                      , hslogger
                      , containers
+                     , edit-distance
+                     , extra
 
 executable HinfoBot
   hs-source-dirs:
@@ -72,4 +74,6 @@ executable HinfoBot
                      , transformers
                      , hslogger
                      , containers
+                     , edit-distance
+                     , extra
 

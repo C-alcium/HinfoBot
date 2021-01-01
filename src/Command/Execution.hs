@@ -12,6 +12,7 @@ import           Command.Types
 import           Control.Monad              (when)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Reader
+import           Data.List.Extra            (minimumOn)
 import qualified Data.List.Split            as S
 import           Data.Maybe                 (fromJust, isJust)
 import           Data.Text                  as T
@@ -25,6 +26,7 @@ import           NewsAPI
 import           Servant.Client
 import           System.Environment         (getEnv)
 import           System.Log.Logger
+import           Text.EditDistance
 
 loggerName :: String
 loggerName = "command.execution"
@@ -37,7 +39,9 @@ commandHandler event = case event of
       let commandParseResult = CMDParse.parseCommand (messageText m)
       let chan               = messageChannel m
       case commandParseResult of
-        (Left _ )            -> sendMessageOrError chan "Command parsing failed."
+        (Left _ )            -> do
+          sendMessageOrError chan "Command parsing failed."
+          recommendation chan $ T.unpack (messageText m)
         (Right (cmd, args) ) -> performCommandAction cmd m args
   _ -> pure ()
 
@@ -123,6 +127,12 @@ sendMessageOrError target message = do
 
 tShow :: (Show a) => a -> Text
 tShow = T.pack . show
+
+recommendation :: ChannelId -> String -> DiscordEffect
+recommendation c t = sendMessageOrError c  $ T.pack  $ "Perhaps you meant: " <> bestMatch t
+  where
+    bestMatch b = minimumOn (\a -> levenshteinDistance defaultEditCosts a b) (Prelude.map show CMD.commandList)
+
 
 logExecution :: (MonadIO m, Show a) => a -> m ()
 logExecution c = do
